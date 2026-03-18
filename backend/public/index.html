@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Disaster Relief Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#007BFF">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #333; }
+    form { margin-bottom: 20px; }
+    label { display: block; margin-top: 10px; }
+    input, textarea, select { width: 100%; padding: 8px; margin-top: 5px; }
+    button { margin-top: 15px; padding: 10px 15px; background: #007BFF; color: white; border: none; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    .report { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+    .urgent { border-left: 5px solid red; }
+    #map { height: 400px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>🌍 Disaster Relief Dashboard</h1>
+
+  <!-- Report submission form -->
+  <form id="reportForm">
+    <label>Location:
+      <input type="text" name="location" required placeholder="e.g. Hyderabad or 17.385,78.486">
+    </label>
+    <label>Urgency:
+      <select name="urgency" required>
+        <option value="">Select urgency</option>
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+    </label>
+    <label>Population Affected:
+      <input type="number" name="population" required>
+    </label>
+    <label>Items Needed:
+      <input type="text" name="items" placeholder="e.g. food, water, medicine">
+    </label>
+    <label>Notes:
+      <textarea name="notes" rows="3"></textarea>
+    </label>
+    <button type="submit">Submit Report</button>
+  </form>
+
+  <h2>📋 Recent Reports</h2>
+  <div id="reports"></div>
+
+  <h2>📈 Predicted Demand</h2>
+  <p id="prediction"></p>
+
+  <h2>🗺️ Map View</h2>
+  <div id="map"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <script>
+    const form = document.getElementById('reportForm');
+    const reportsDiv = document.getElementById('reports');
+
+    // Initialize map
+    const map = L.map('map').setView([20, 78], 5); // Centered on India
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let markers = [];
+
+    // Fetch and display reports
+    async function loadReports() {
+     const res = await fetch('http://localhost:8080/reports');
+
+      const data = await res.json();
+      reportsDiv.innerHTML = '';
+
+      // Clear old markers
+      markers.forEach(m => map.removeLayer(m));
+      markers = [];
+
+      data.items.forEach(r => {
+        // Display in list
+        const div = document.createElement('div');
+        div.className = 'report ' + (r.urgency === 'high' ? 'urgent' : '');
+        div.innerHTML = `
+          <strong>Location:</strong> ${r.originalLocation} (${r.location})<br>
+          <strong>Urgency:</strong> ${r.urgency}<br>
+          <strong>Population:</strong> ${r.population}<br>
+          <strong>Items:</strong> ${r.items}<br>
+          <strong>Notes:</strong> ${r.notes}<br>
+          <small>Reported at: ${new Date(r.timestamp).toLocaleString()}</small>
+        `;
+        reportsDiv.appendChild(div);
+
+        // Add marker to map if latLng exists
+        if (r.latLng) {
+          const marker = L.marker([r.latLng.lat, r.latLng.lng]).addTo(map);
+          marker.bindPopup(`
+            <b>${r.originalLocation}</b><br>
+            Urgency: ${r.urgency}<br>
+            Population: ${r.population}<br>
+            Items: ${r.items}<br>
+            Notes: ${r.notes}
+          `);
+          markers.push(marker);
+        }
+      });
+    }
+
+    // NEW: Prediction function
+    async function getPrediction(population) {
+      const res = await fetch('http://localhost:8080/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ population })
+      });
+      const data = await res.json();
+      document.getElementById('prediction').textContent =
+        `Predicted requests: ${data.predicted_requests}`;
+    }
+
+
+    // Submit new report
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const body = Object.fromEntries(formData.entries());
+
+      const res = await fetch('http://localhost:8080/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (res.ok) {
+        const submitted = await res.json(); // get the new report object
+        form.reset();
+        loadReports();
+        getPrediction(submitted.population); // NEW: trigger prediction
+      } else {
+        alert('Error submitting report');
+      }
+    });
+
+    // Initial load
+    loadReports();
+
+    // Register service worker
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js")
+      .then(() => console.log("Service Worker registered"))
+      .catch(err => console.error("Service Worker registration failed:", err));
+  }
+
+  </script>
+</body>
+</html>
