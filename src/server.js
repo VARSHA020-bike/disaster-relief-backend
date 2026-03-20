@@ -104,10 +104,10 @@ router.post('/', async (req, res) => {
 });
 
 // Mount router
-app.use('/reports', router);
+app.use('/api/reports', router);
 
 // Add predictive analytics route here
-app.post('/predict', (req, res) => {
+app.post('/api/predict', (req, res) => {
   const { population } = req.body;
   if (!population) {
     return res.status(400).json({ error: 'Population is required' });

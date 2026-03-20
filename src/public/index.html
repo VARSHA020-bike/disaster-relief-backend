@@ -119,7 +119,7 @@ fetch('https://disaster-relief-backend-jcok.onrender.com');
 
     // NEW: Prediction function
     async function getPrediction(population) {
-      const res = await fetch('https://disaster-relief-backend-jcok.onrender.com/predict', {
+      const res = await fetch('https://disaster-relief-backend-jcok.onrender.com/api/predict', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ population })
