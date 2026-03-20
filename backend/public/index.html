@@ -78,7 +78,7 @@
 
     // Fetch and display reports
     async function loadReports() {
-     const res = await fetch('http://localhost:8080/reports');
+     const res = await fetch('https://disaster-relief-backend-jcok.onrender.com/api/reports');
 
       const data = await res.json();
       reportsDiv.innerHTML = '';
@@ -118,7 +118,7 @@
 
     // NEW: Prediction function
     async function getPrediction(population) {
-      const res = await fetch('http://localhost:8080/predict', {
+      const res = await fetch('https://disaster-relief-backend-jcok.onrender.com/api/predict', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ population })
@@ -135,7 +135,7 @@
       const formData = new FormData(form);
       const body = Object.fromEntries(formData.entries());
 
-      const res = await fetch('http://localhost:8080/reports', {
+      const res = await fetch('https://disaster-relief-backend-jcok.onrender.com/api/reports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)

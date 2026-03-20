@@ -79,7 +79,7 @@
     // Fetch and display reports
     async function loadReports() {
      const res = await 
-fetch('https://disaster-relief-backend-jcok.onrender.com');
+fetch('https://disaster-relief-backend-jcok.onrender.com/api/reports');
 
       const data = await res.json();
       reportsDiv.innerHTML = '';
@@ -136,7 +136,7 @@ fetch('https://disaster-relief-backend-jcok.onrender.com');
       const formData = new FormData(form);
       const body = Object.fromEntries(formData.entries());
 
-      const res = await fetch('https://disaster-relief-backend-jcok.onrender.com', {
+      const res = await fetch('https://disaster-relief-backend-jcok.onrender.com/api/reports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
